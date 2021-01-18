@@ -7,6 +7,25 @@ module wavefunction
     endtype
 contains
     
+    subroutine DensityMatrix(Phi,Rho)
+        implicit none
+        integer :: j,l,s,sprime
+        type(psi) :: Phi 
+        complex(kind=8) :: Rho(2,2,2,2)
+        ! The first and second indexes stand for configuration, the third and fourth indexes stand for electronic states.
+
+        do s=1,2
+            do sprime=1,2
+                do j=1,2
+                    do l=1,2
+                        Rho(j,l,s,sprime)=conjg(Phi%A((s-1)*2+j))*Phi%A((sprime-1)*2+l)
+                    enddo
+                enddo
+            enddo
+        enddo
+
+        return
+    endsubroutine
 end module wavefunction
 
 !---------------------------------------------------------------------------------------------------------
