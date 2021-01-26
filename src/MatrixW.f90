@@ -9,6 +9,45 @@ module Wmat
     implicit none
     
 contains
+
+    complex(kind=8) function OverlapNuclear(Rj,Pj,Rl,Pl)
+    !-----------------------------------------------------
+    ! This function calculate the Overlap integral between
+    ! two Gaussian wavepackets, < \chi_j | \chi_l > ,
+    ! j is bra, l is ket.
+    !-----------------------------------------------------
+        implicit none
+        double precision :: Rj,Pj,Rl,Pl
+        complex(kind=8) :: zj,zl
+
+        zj=sqrt(gamma/2)*Rj+(0,1)*sqrt(1/(2*gamma))*Pj
+        zl=sqrt(gamma/2)*Rl+(0,1)*sqrt(1/(2*gamma))*Pl
+
+        OverlapNuclear=exp(conjg(zj)*zl-conjg(zj)*zj/2-conjg(zl)*zl/2)
+
+        return
+    endfunction
+
+    double precision function OverlapElectronic(Rj,Rl,s,sprime)
+    !---------------------------------------------------------------------
+    ! This function calculate the Overlap integral between
+    ! two adiabatic electronic wavefunction located at different
+    ! centers Rj and Rl, < \phi_j_s | \phi_l_sprime >, j is bra, l is ket.
+    !---------------------------------------------------------------------
+        implicit none
+        integer :: s,sprime
+        double precision :: Rj,Rl
+        double precision :: cj(2,2),cl(2,2)
+
+        call Diagonal(cj,Rj)
+        call Diagonal(cl,Rl)
+
+        OverlapElectronic=conjg(cj(s,1))*cl(sprime,1)+conjg(cj(s,2))*cl(sprime,2)
+
+        return 
+    endfunction
+
+
     subroutine W_0000(Phi,W0000)
         implicit none
         integer :: j,l
@@ -20,7 +59,8 @@ contains
             do l=1,2
                 do s=1,2
                     do sprime=1,2
-                        W0000(j+(s-1)*2,l+(sprime-1)*2)=
+                        W0000(j+(s-1)*2,l+(sprime-1)*2)=&
+                        OverlapNuclear(R(j),P(j),R(l),P(l))*OverlapElectronic(R(j),R(l),s,sprime)
                     enddo
                 enddo
             enddo
