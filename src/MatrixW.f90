@@ -47,7 +47,48 @@ contains
         return 
     endfunction
 
+    double precision function OverlapNAC(Rj,Rl,s,sprime)
+    !-----------------------------------------------------------------------
+    ! This function calculate the "Overlap" integral between an adiabatic
+    ! wavefunction and the derivative of another adiabatic wavefunction
+    ! centers at Rj and Rl, < \phi_j_s | \pdv{\phi_l_sprime}{R_l} >, j is bra,
+    ! l is ket
+    !-----------------------------------------------------------------------
+        implicit none
+        integer :: s,sprime
+        double precision :: Rj,Rl 
+        integer :: spp
 
+        OverlapNAC=0
+        call NAC(d,Rl)
+
+        do spp=1,2
+            OverlapNAC=OverlapNAC+OverlapElectronic(Rj,Rl,s,spp)*d(spp,sprime)
+        enddo
+
+        return
+    endfunction
+
+    double precision function OverlapNAC_dagger(Rj,Rl,s,sprime)
+    !-----------------------------------------------------------
+    ! just like OverlapNAC above, this function calculate 
+    ! < \pdv{\phi_j_s}{R_s} | \phi_l_sprime >
+    !-----------------------------------------------------------
+        implicit none
+        integer :: s,sprime
+        double precision :: Rj,Rl 
+        integer :: spp
+
+        OverlapNAC_dagger=0
+        call NAC(d,Rj)
+
+        do spp=1,2
+            OverlapNAC_dagger=OverlapNAC_dagger-d(s,spp)*OverlapElectronic(Rj,Rl,spp,s)
+        enddo
+
+        return
+    endfunction
+    
     subroutine W_0000(Phi,W0000)
         implicit none
         integer :: j,l
@@ -93,7 +134,23 @@ contains
 
     subroutine W_00R0(Phi,W00R0)
         implicit none
+        integer :: j,l
+        integer :: s,sprime
+        type(psi) :: Phi
+        double precision :: W00R0(4,4)
 
+        do j=1,2
+            do l=1,2
+                do s=1,2
+                    do sprime=1,2
+                        W00R0(j+(s-1)*2,l+(sprime-1)*2)=&
+                        OverlapNAC_dagger(Phi%R(j),Phi%R(l),s,sprime)*OverlapNuclear(Phi%R(j),Phi%P(j),Phi%R(l),Phi%P(l))
+                    enddo
+                enddo
+            enddo
+        enddo
+
+        return
     endsubroutine
 
     subroutine W_RR00(Phi,WRR00)
@@ -124,14 +181,52 @@ contains
                 enddo
             enddo
         enddo
+
+        return
     endsubroutine
 
-    subroutine W_R00R(r,p,A)
+    subroutine W_R00R(Phi,WR00R)
         implicit none
+        integer :: j,l
+        integer :: s,sprime
+        type(psi) :: Phi
+        double precision :: WR00R(4,4)
+
+        do j=1,2
+            do l=1,2
+                do s=1,2
+                    do sprime=1,2
+                        WR00R(j+(s-1)*2,l+(sprime-1)*2)=&
+                        OverlapNAC(Phi%R(j),Phi%R(l),s,sprime)*OverlapNuclear(Phi%R(j),Phi%P(j),Phi%R(l),Phi%P(l))*&
+                        ((sqrt(gamma/2)*Phi%R(l)+(0,1)*sqrt(1/(2*gamma))*Phi%P(l))*sqrt(gamma/2)-(gamma/2)*Phi%R(j))
+                    enddo
+                enddo
+            enddo
+        enddo
+
+        return
     endsubroutine
 
-    subroutine W_0RR0(r,p,A)
+    subroutine W_0RR0(Phi,W0RR0)
         implicit none
+        integer :: j,l
+        integer :: s,sprime
+        type(psi) :: Phi
+        double precision :: W0RR0(4,4)
+
+        do j=1,2
+            do l=1,2
+                do s=1,2
+                    do sprime=1,2
+                        W0RR0(j+(s-1)*2,l+(sprime-1)*2)=&
+                        OverlapNAC_dagger(Phi%R(j),Phi%R(l),s,sprime)*OverlapNuclear(Phi%R(j),Phi%P(j),Phi%R(l),Phi%P(l))*&
+                        ((sqrt(gamma/2)*Phi%R(j)-(0,1)*sqrt(1/(2*gamma))*Phi%P(j))*sqrt(gamma/2)-(gamma/2)*Phi%R(l))
+                    enddo
+                enddo
+            enddo
+        enddo
+
+        return
     endsubroutine
 
     subroutine W_0R00(Phi,W0R00)
@@ -158,7 +253,23 @@ contains
 
     subroutine W_000R(Phi,W000R)
         implicit none
-        
+        integer :: j,l
+        integer :: s,sprime
+        type(psi) :: Phi
+        double precision :: W000R(4,4)
+
+        do j=1,2
+            do l=1,2
+                do s=1,2
+                    do sprime=1,2
+                        W000R(j+(s-1)*2,l+(sprime-1)*2)=&
+                        OverlapNAC(Phi%R(j),Phi%R(l),s,sprime)*OverlapNuclear(Phi%R(j),Phi%P(j),Phi%R(l),Phi%P(l))
+                    enddo
+                enddo
+            enddo
+        enddo
+
+        return
     endsubroutine
 
     subroutine W_RP00(Phi,WRP00)
@@ -190,8 +301,27 @@ contains
         return
     endsubroutine
 
-    subroutine W_0PR0(r,p,A)
+    subroutine W_0PR0(Phi,W0PR0)
         implicit none
+        integer :: j,l
+        integer :: s,sprime
+        type(psi) :: Phi
+        double precision :: W0PR0(4,4)
+
+        do j=1,2
+            do l=1,2
+                do s=1,2
+                    do sprime=1,2
+                        W0PR0(j+(s-1)*2,l+(sprime-1)*2)=&
+                        OverlapNAC_dagger(Phi%R(j),Phi%R(l),s,sprime)*OverlapNuclear(Phi%R(j),Phi%P(j),Phi%R(l),Phi%P(l))*&
+                        ((sqrt(gamma/2)*Phi%R(j)-(0,1)*sqrt(1/(2*gamma))*Phi%P(j))*(0,1)*sqrt(1/(2*gamma))-&
+                        (1/(2*gamma))*Phi%P(l))
+                    enddo
+                enddo
+            enddo
+        enddo
+
+        return
     endsubroutine
 
     subroutine W_0P00(Phi,W0P00)
@@ -240,8 +370,27 @@ contains
         return
     endsubroutine
 
-    subroutine W_P00R(r,p,A)
+    subroutine W_P00R(Phi,WP00R)
         implicit none
+        integer :: j,l
+        integer :: s,sprime
+        type(psi) :: Phi
+        double precision :: WP00R(4,4)
+
+        do j=1,2
+            do l=1,2
+                do s=1,2
+                    do sprime=1,2
+                        WP00R(j+(s-1)*2,l+(sprime-1)*2)=&
+                        OverlapNAC(Phi%R(j),Phi%R(l),s,sprime)*OverlapNuclear(Phi%R(j),Phi%P(j),Phi%R(l),Phi%P(l))*&
+                        (-(sqrt(gamma/2)*Phi%R(l)+(0,1)*sqrt(1/(2*gamma))*Phi%P(l))*(0,1)*sqrt(1/(2*gamma))-&
+                        (1/(2*gamma))*Phi%P(j))
+                    enddo
+                enddo
+            enddo
+        enddo
+
+        return
     endsubroutine
 
     subroutine W_PR00(Phi,WPR00)
