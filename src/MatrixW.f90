@@ -60,7 +60,7 @@ contains
                 do s=1,2
                     do sprime=1,2
                         W0000(j+(s-1)*2,l+(sprime-1)*2)=&
-                        OverlapNuclear(R(j),P(j),R(l),P(l))*OverlapElectronic(R(j),R(l),s,sprime)
+                        OverlapNuclear(Phi%R(j),Phi%P(j),Phi%R(l),Phi%P(l))*OverlapElectronic(Phi%R(j),Phi%R(l),s,sprime)
                     enddo
                 enddo
             enddo
@@ -69,16 +69,61 @@ contains
         return
     endsubroutine
 
-    subroutine W_R000(r,p,A)
+    subroutine W_R000(Phi,WR000)
         implicit none
+        integer :: j,l
+        integer :: s,sprime
+        type(psi) :: Phi
+        double precision :: WR000(4,4)
+
+        do j=1,2
+            do l=1,2
+                do s=1,2
+                    do sprime=1,2
+                        WR000(j+(s-1)*2,l+(sprime-1)*2)=&
+                        OverlapElectronic(Phi%R(j),Phi%R(l),s,sprime)*OverlapNuclear(Phi%R(j),Phi%P(j),Phi%R(l),Phi%P(l))*&
+                        ((sqrt(gamma/2)*Phi%R(l)+(0,1)*sqrt(1/(2*gamma))*Phi%P(l))*sqrt(gamma/2)-(gamma/2)*Phi%R(j))
+                    enddo
+                enddo
+            enddo
+        enddo
+
+        return
     endsubroutine
 
-    subroutine W_00R0(r,p,A)
+    subroutine W_00R0(Phi,W00R0)
         implicit none
+
     endsubroutine
 
-    subroutine W_RR00(r,p,A)
+    subroutine W_RR00(Phi,WRR00)
         implicit none
+        integer :: j,l
+        integer :: s,sprime
+        type(psi) :: Phi
+        double precision :: WRR00(4,4)
+
+        do j=1,2
+            do l=1,2
+                do s=1,2
+                    do sprime=1,2
+                        if (j/=l) then
+                            WRR00(j+(s-1)*2,l+(sprime-1)*2)=&
+                            OverlapElectronic(Phi%R(j),Phi%R(l),s,sprime)*OverlapNuclear(Phi%R(j),Phi%P(j),Phi%R(l),Phi%P(l))*&
+                            (gamma/2&
+                            +((sqrt(gamma/2)*Phi%R(l)+(0,1)*sqrt(1/(2*gamma))*Phi%P(l))*sqrt(gamma/2)-(gamma/2)*Phi%R(j))*&
+                            ((sqrt(gamma/2)*Phi%R(j)-(0,1)*sqrt(1/(2*gamma))*Phi%P(j))*sqrt(gamma/2)-(gamma/2)*Phi%R(l)))
+                        elseif (j==l) then
+                            if (s/=sprime) then
+                                WRR00(j+(s-1)*2,l+(sprime-1)*2)=0
+                            elseif (s==sprime) then
+                                WRR00(j+(s-1)*2,l+(sprime-1)*2)=(Phi%P(j))**2/4+gamma/2
+                            endif
+                        endif
+                    enddo
+                enddo
+            enddo
+        enddo
     endsubroutine
 
     subroutine W_R00R(r,p,A)
@@ -89,40 +134,177 @@ contains
         implicit none
     endsubroutine
 
-    subroutine W_0R00(r,p,A)
+    subroutine W_0R00(Phi,W0R00)
         implicit none
+        integer :: j,l
+        integer :: s,sprime
+        type(psi) :: Phi
+        double precision :: W0R00(4,4)
+
+        do j=1,2
+            do l=1,2
+                do s=1,2
+                    do sprime=1,2
+                        W0R00(j+(s-1)*2,l+(sprime-1)*2)=&
+                        OverlapElectronic(Phi%R(j),Phi%R(l),s,sprime)*OverlapNuclear(Phi%R(j),Phi%P(j),Phi%R(l),Phi%P(l))*&
+                        ((sqrt(gamma/2)*Phi%R(j)-(0,1)*sqrt(1/(2*gamma))*Phi%P(j))*sqrt(gamma/2)-(gamma/2)*Phi%R(l))
+                    enddo
+                enddo
+            enddo
+        enddo
+
+        return
     endsubroutine
 
-    subroutine W_000R(r,p,A)
+    subroutine W_000R(Phi,W000R)
         implicit none
+        
     endsubroutine
 
-    subroutine W_RP00(r,p,A)
+    subroutine W_RP00(Phi,WRP00)
         implicit none
+        integer :: j,l
+        integer :: s,sprime
+        type(psi) :: Phi
+        double precision :: WRP00(4,4)
+
+        do j=1,2
+            do l=1,2
+                do s=1,2
+                    do sprime=1,2
+                        if (j/=l) then
+                            WRP00(j+(s-1)*2,l+(sprime-1)*2)=&
+                            OverlapElectronic(Phi%R(j),Phi%R(l),s,sprime)*OverlapNuclear(Phi%R(j),Phi%P(j),Phi%R(l),Phi%P(l))*&
+                            (((sqrt(gamma/2)*Phi%R(j)-(0,1)*sqrt(1/(2*gamma))*Phi%P(j))*(0,1)*sqrt(1/(2*gamma))-&
+                            (1/(2*gamma))*Phi%P(l))*&
+                            ((sqrt(gamma/2)*Phi%R(l)+(0,1)*sqrt(1/(2*gamma))*Phi%P(l))*sqrt(gamma/2)-(gamma/2)*Phi%R(j))&
+                            +(0,1)*0.5)
+                        elseif (j==l) then
+                            WRP00(j+(s-1)*2,l+(sprime-1)*2)=0
+                        endif
+                    enddo
+                enddo
+            enddo
+        enddo
+
+        return
     endsubroutine
 
     subroutine W_0PR0(r,p,A)
         implicit none
     endsubroutine
 
-    subroutine W_0P00(r,p,A)
+    subroutine W_0P00(Phi,W0P00)
         implicit none
+        integer :: j,l
+        integer :: s,sprime
+        type(psi) :: Phi
+        double precision :: W0P00(4,4)
+
+        do j=1,2
+            do l=1,2
+                do s=1,2
+                    do sprime=1,2
+                        W0P00(j+(s-1)*2,l+(sprime-1)*2)=&
+                        OverlapElectronic(Phi%R(j),Phi%R(l),s,sprime)*OverlapNuclear(Phi%R(j),Phi%P(j),Phi%R(l),Phi%P(l))*&
+                        ((sqrt(gamma/2)*Phi%R(j)-(0,1)*sqrt(1/(2*gamma))*Phi%P(j))*(0,1)*sqrt(1/(2*gamma))-&
+                        (1/(2*gamma))*Phi%P(l))
+                    enddo
+                enddo
+            enddo
+        enddo
+
+        return
     endsubroutine
 
-    subroutine W_P000(r,p,A)
+    subroutine W_P000(Phi,WP000)
         implicit none
+        integer :: j,l
+        integer :: s,sprime
+        type(psi) :: Phi
+        double precision :: WP000(4,4)
+
+        do j=1,2
+            do l=1,2
+                do s=1,2
+                    do sprime=1,2
+                        WP000(j+(s-1)*2,l+(sprime-1)*2)=&
+                        OverlapElectronic(Phi%R(j),Phi%R(l),s,sprime)*OverlapNuclear(Phi%R(j),Phi%P(j),Phi%R(l),Phi%P(l))*&
+                        (-(sqrt(gamma/2)*Phi%R(l)+(0,1)*sqrt(1/(2*gamma))*Phi%P(l))*(0,1)*sqrt(1/(2*gamma))-&
+                        (1/(2*gamma))*Phi%P(j))
+                    enddo
+                enddo
+            enddo
+        enddo
+
+        return
     endsubroutine
 
     subroutine W_P00R(r,p,A)
         implicit none
     endsubroutine
 
-    subroutine W_PR00(r,p,A)
+    subroutine W_PR00(Phi,WPR00)
         implicit none
+        integer :: j,l
+        integer :: s,sprime
+        type(psi) :: Phi
+        double precision :: WPR00(4,4)
+
+        do j=1,2
+            do l=1,2
+                do s=1,2
+                    do sprime=1,2
+                        if (j/=l) then
+                            WPR00(j+(s-1)*2,l+(sprime-1)*2)=&
+                            OverlapElectronic(Phi%R(j),Phi%R(l),s,sprime)*OverlapNuclear(Phi%R(j),Phi%P(j),Phi%R(l),Phi%P(l))*&
+                            ((-(sqrt(gamma/2)*Phi%R(l)+(0,1)*sqrt(1/(2*gamma))*Phi%P(l))*(0,1)*sqrt(1/(2*gamma))-&
+                            (1/(2*gamma))*Phi%P(j))*&
+                            ((sqrt(gamma/2)*Phi%R(j)-(0,1)*sqrt(1/(2*gamma))*Phi%P(j))*sqrt(gamma/2)-(gamma/2)*Phi%R(l))&
+                            -(0,1)*0.5)
+                        elseif (j==l) then
+                            WPR00(j+(s-1)*2,l+(sprime-1)*2)=0
+                        endif
+                    enddo
+                enddo
+            enddo
+        enddo
+
+        return
     endsubroutine
 
-    subroutine W_PP00(r,p,A)
+    subroutine W_PP00(Phi,WPP00)
         implicit none
+        integer :: j,l
+        integer :: s,sprime
+        type(psi) :: Phi
+        double precision :: WPP00(4,4)
+
+        do j=1,2
+            do l=1,2
+                do s=1,2
+                    do sprime=1,2
+                        if (j/=l) then
+                            WPP00(j+(s-1)*2,l+(sprime-1)*2)=&
+                            OverlapElectronic(Phi%R(j),Phi%R(l),s,sprime)*OverlapNuclear(Phi%R(j),Phi%P(j),Phi%R(l),Phi%P(l))*&
+                            (1/(2*gamma)+
+                            (-(sqrt(gamma/2)*Phi%R(l)+(0,1)*sqrt(1/(2*gamma))*Phi%P(l))*(0,1)sqrt(1/(2*gamma))&
+                            -(1/(2*gamma))*Phi%P(j))&
+                            *((sqrt(gamma/2)*Phi%R(j)-(0,1)*sqrt(1/(2*gamma))*Phi%P(j))*(0,1)sqrt(1/(2*gamma))&
+                            -(1/(2*gamma))*Phi%P(l)))
+                        elseif (j==l) then
+                            if (s/=sprime) then
+                                WPP00(j+(s-1)*2,l+(sprime-1)*2)=0
+                            elseif (s==sprime) then
+                                WPP00(j+(s-1)*2,l+(sprime-1)*2)=1/(2*gamma)+(Phi%R(j))**2/4
+                            endif
+                        endif
+                    enddo
+                enddo
+            enddo
+        enddo
+
+        return
     endsubroutine
     
 end module Wmat
