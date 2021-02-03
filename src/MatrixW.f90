@@ -1,24 +1,28 @@
-!------------------------------------------------------------------------------------------------------------------
-!
-! This module contains programs for the calculation of overlap matrix W and its derivative (some Gaussian wavepacket 
-! are replaced by their derivative of R or P ). Every W is a (M * N) * (M * N) matrix, where M is the number of 
-! Gaussian configurations and N is the number of electronic states.
-!
-!--------------------------------------------------------------------------------------------------------------------
+!---------------------------------------------------------------------------------------------------------------------
+!                                                                                                                    !
+! This module contains programs for the calculation of overlap matrix W and its derivative (some Gaussian wavepacket !
+! are replaced by their derivative of R or P ). Every W is a (M * N) * (M * N) matrix, where M is the number of      !
+! Gaussian configurations and N is the number of electronic states.                                                  !
+!                                                                                                                    !
+!---------------------------------------------------------------------------------------------------------------------
 module Wmat
+    use wavefunction
+    use Model
     implicit none
     
 contains
 
     complex(kind=8) function OverlapNuclear(Rj,Pj,Rl,Pl)
-    !-----------------------------------------------------
-    ! This function calculate the Overlap integral between
-    ! two Gaussian wavepackets, < \chi_j | \chi_l > ,
-    ! j is bra, l is ket.
-    !-----------------------------------------------------
+    !-----------------------------------------------------!
+    ! This function calculate the Overlap integral between!
+    ! two Gaussian wavepackets, < \chi_j | \chi_l > ,     !
+    ! j is bra, l is ket.                                 !
+    !-----------------------------------------------------!
         implicit none
-        double precision :: Rj,Pj,Rl,Pl
-        complex(kind=8) :: zj,zl
+
+        double precision,intent(in) :: Rj,Pj,Rl,Pl
+        
+        complex(kind=8)             :: zj,zl
 
         zj=sqrt(gamma/2)*Rj+(0,1)*sqrt(1/(2*gamma))*Pj
         zl=sqrt(gamma/2)*Rl+(0,1)*sqrt(1/(2*gamma))*Pl
@@ -35,14 +39,17 @@ contains
     ! centers Rj and Rl, < \phi_j_s | \phi_l_sprime >, j is bra, l is ket.
     !---------------------------------------------------------------------
         implicit none
-        integer :: s,sprime
-        double precision :: Rj,Rl
-        double precision :: cj(2,2),cl(2,2)
+        
+        integer,         intent(in) :: s,sprime
+        double precision,intent(in) :: Rj,Rl
+        
+        double precision            :: cj(2,2),cl(2,2)
 
         call Diagonal(cj,Rj)
         call Diagonal(cl,Rl)
 
-        OverlapElectronic=conjg(cj(s,1))*cl(sprime,1)+conjg(cj(s,2))*cl(sprime,2)
+        OverlapElectronic=cj(s,1)*cl(sprime,1)+cj(s,2)*cl(sprime,2)    ! since in the model system the electronic wavefunction 
+                                                                       ! is always real, so there is no need to use conjg() 
 
         return 
     endfunction
@@ -55,12 +62,14 @@ contains
     ! l is ket
     !-----------------------------------------------------------------------
         implicit none
-        integer :: s,sprime
-        double precision :: Rj,Rl 
-        integer :: spp
+        
+        integer,         intent(in) :: s,sprime
+        double precision,intent(in) :: Rj,Rl 
+        
+        integer                     :: spp
 
         OverlapNAC=0
-        call NAC(d,Rl)
+        call NAC(d,Rl)               ! maybe there will be some problem with d?
 
         do spp=1,2
             OverlapNAC=OverlapNAC+OverlapElectronic(Rj,Rl,s,spp)*d(spp,sprime)
@@ -75,15 +84,17 @@ contains
     ! < \pdv{\phi_j_s}{R_s} | \phi_l_sprime >
     !-----------------------------------------------------------
         implicit none
-        integer :: s,sprime
-        double precision :: Rj,Rl 
-        integer :: spp
+        
+        integer,         intent(in) :: s,sprime
+        double precision,intent(in) :: Rj,Rl 
+        
+        integer                     :: spp
 
         OverlapNAC_dagger=0
         call NAC(d,Rj)
 
         do spp=1,2
-            OverlapNAC_dagger=OverlapNAC_dagger-d(s,spp)*OverlapElectronic(Rj,Rl,spp,s)
+            OverlapNAC_dagger=OverlapNAC_dagger-d(s,spp)*OverlapElectronic(Rj,Rl,spp,sprime)
         enddo
 
         return
@@ -91,11 +102,14 @@ contains
     
     subroutine W_0000(Phi,W0000)
         implicit none
-        integer :: j,l
-        integer :: s,sprime
-        type(psi) :: Phi
-        double precision :: W0000(4,4)      ! the general dimension formula should be M*N, for a 2-configuration and 
-                                            ! 2-electronic-state wavefunction, the number is 2*2=4
+        
+        type(psi),      intent(in)    :: Phi
+        complex(kind=8),intent(inout) :: W0000(4,4)    ! the general dimension formula should be M*N, for a 2-configuration and 
+                                                        ! 2-electronic-state wavefunction, the number is 2*2=4
+
+        integer                       :: j,l
+        integer                       :: s,sprime
+
         do j=1,2
             do l=1,2
                 do s=1,2
@@ -112,10 +126,12 @@ contains
 
     subroutine W_R000(Phi,WR000)
         implicit none
-        integer :: j,l
-        integer :: s,sprime
-        type(psi) :: Phi
-        double precision :: WR000(4,4)
+        
+        type(psi),      intent(in)    :: Phi
+        complex(kind=8),intent(inout) :: WR000(4,4)
+        
+        integer                       :: j,l
+        integer                       :: s,sprime
 
         do j=1,2
             do l=1,2
@@ -134,10 +150,12 @@ contains
 
     subroutine W_00R0(Phi,W00R0)
         implicit none
-        integer :: j,l
-        integer :: s,sprime
-        type(psi) :: Phi
-        double precision :: W00R0(4,4)
+        
+        type(psi),      intent(in)    :: Phi
+        complex(kind=8),intent(inout) :: W00R0(4,4)
+        
+        integer                       :: j,l
+        integer                       :: s,sprime
 
         do j=1,2
             do l=1,2
@@ -155,11 +173,14 @@ contains
 
     subroutine W_RR00(Phi,WRR00)
         implicit none
-        integer :: j,l
-        integer :: s,sprime
-        type(psi) :: Phi
-        double precision :: WRR00(4,4)
+        
+        type(psi),      intent(in)    :: Phi
+        complex(kind=8),intent(inout) :: WRR00(4,4)
+        
+        integer                       :: j,l
+        integer                       :: s,sprime
 
+        ! Be careful of the derivative when they are to the same index!
         do j=1,2
             do l=1,2
                 do s=1,2
@@ -187,10 +208,12 @@ contains
 
     subroutine W_R00R(Phi,WR00R)
         implicit none
-        integer :: j,l
-        integer :: s,sprime
-        type(psi) :: Phi
-        double precision :: WR00R(4,4)
+        
+        type(psi),      intent(in)    :: Phi
+        complex(kind=8),intent(inout) :: WR00R(4,4)
+        
+        integer                       :: j,l
+        integer                       :: s,sprime
 
         do j=1,2
             do l=1,2
@@ -209,10 +232,12 @@ contains
 
     subroutine W_0RR0(Phi,W0RR0)
         implicit none
-        integer :: j,l
-        integer :: s,sprime
-        type(psi) :: Phi
-        double precision :: W0RR0(4,4)
+        
+        type(psi),      intent(in)    :: Phi
+        complex(kind=8),intent(inout) :: W0RR0(4,4)
+        
+        integer                       :: j,l
+        integer                       :: s,sprime
 
         do j=1,2
             do l=1,2
@@ -231,10 +256,12 @@ contains
 
     subroutine W_0R00(Phi,W0R00)
         implicit none
-        integer :: j,l
-        integer :: s,sprime
-        type(psi) :: Phi
-        double precision :: W0R00(4,4)
+        
+        type(psi),      intent(in)    :: Phi
+        complex(kind=8),intent(inout) :: W0R00(4,4)
+        
+        integer                       :: j,l
+        integer                       :: s,sprime
 
         do j=1,2
             do l=1,2
@@ -253,10 +280,12 @@ contains
 
     subroutine W_000R(Phi,W000R)
         implicit none
-        integer :: j,l
-        integer :: s,sprime
-        type(psi) :: Phi
-        double precision :: W000R(4,4)
+        
+        type(psi),      intent(in)    :: Phi
+        complex(kind=8),intent(inout) :: W000R(4,4)
+        
+        integer                       :: j,l
+        integer                       :: s,sprime
 
         do j=1,2
             do l=1,2
@@ -274,10 +303,12 @@ contains
 
     subroutine W_RP00(Phi,WRP00)
         implicit none
-        integer :: j,l
-        integer :: s,sprime
-        type(psi) :: Phi
-        double precision :: WRP00(4,4)
+        
+        type(psi),      intent(in)    :: Phi
+        complex(kind=8),intent(inout) :: WRP00(4,4)
+        
+        integer                       :: j,l
+        integer                       :: s,sprime
 
         do j=1,2
             do l=1,2
@@ -303,10 +334,12 @@ contains
 
     subroutine W_0PR0(Phi,W0PR0)
         implicit none
-        integer :: j,l
-        integer :: s,sprime
-        type(psi) :: Phi
-        double precision :: W0PR0(4,4)
+        
+        type(psi),      intent(in)    :: Phi
+        complex(kind=8),intent(inout) :: W0PR0(4,4)
+        
+        integer                       :: j,l
+        integer                       :: s,sprime
 
         do j=1,2
             do l=1,2
@@ -326,10 +359,12 @@ contains
 
     subroutine W_0P00(Phi,W0P00)
         implicit none
-        integer :: j,l
-        integer :: s,sprime
-        type(psi) :: Phi
-        double precision :: W0P00(4,4)
+        
+        type(psi),      intent(in)    :: Phi
+        complex(kind=8),intent(inout) :: W0P00(4,4)
+        
+        integer                       :: j,l
+        integer                       :: s,sprime
 
         do j=1,2
             do l=1,2
@@ -349,10 +384,12 @@ contains
 
     subroutine W_P000(Phi,WP000)
         implicit none
-        integer :: j,l
-        integer :: s,sprime
-        type(psi) :: Phi
-        double precision :: WP000(4,4)
+        
+        type(psi),      intent(in)    :: Phi
+        complex(kind=8),intent(inout) :: WP000(4,4)
+        
+        integer                       :: j,l
+        integer                       :: s,sprime
 
         do j=1,2
             do l=1,2
@@ -372,10 +409,12 @@ contains
 
     subroutine W_P00R(Phi,WP00R)
         implicit none
-        integer :: j,l
-        integer :: s,sprime
-        type(psi) :: Phi
-        double precision :: WP00R(4,4)
+        
+        type(psi)                     :: Phi
+        complex(kind=8),intent(inout) :: WP00R(4,4)
+        
+        integer                       :: j,l
+        integer                       :: s,sprime
 
         do j=1,2
             do l=1,2
@@ -395,10 +434,12 @@ contains
 
     subroutine W_PR00(Phi,WPR00)
         implicit none
-        integer :: j,l
-        integer :: s,sprime
-        type(psi) :: Phi
-        double precision :: WPR00(4,4)
+        
+        type(psi),      intent(in)    :: Phi
+        complex(kind=8),intent(inout) :: WPR00(4,4)
+        
+        integer                       :: j,l
+        integer                       :: s,sprime
 
         do j=1,2
             do l=1,2
@@ -424,10 +465,12 @@ contains
 
     subroutine W_PP00(Phi,WPP00)
         implicit none
-        integer :: j,l
-        integer :: s,sprime
-        type(psi) :: Phi
-        double precision :: WPP00(4,4)
+        
+        type(psi),      intent(in)    :: Phi
+        complex(kind=8),intent(inout) :: WPP00(4,4)
+        
+        integer                       :: j,l
+        integer                       :: s,sprime
 
         do j=1,2
             do l=1,2
@@ -436,10 +479,10 @@ contains
                         if (j/=l) then
                             WPP00(j+(s-1)*2,l+(sprime-1)*2)=&
                             OverlapElectronic(Phi%R(j),Phi%R(l),s,sprime)*OverlapNuclear(Phi%R(j),Phi%P(j),Phi%R(l),Phi%P(l))*&
-                            (1/(2*gamma)+
-                            (-(sqrt(gamma/2)*Phi%R(l)+(0,1)*sqrt(1/(2*gamma))*Phi%P(l))*(0,1)sqrt(1/(2*gamma))&
+                            (1/(2*gamma)+&
+                            (-(sqrt(gamma/2)*Phi%R(l)+(0,1)*sqrt(1/(2*gamma))*Phi%P(l))*(0,1)*sqrt(1/(2*gamma))&
                             -(1/(2*gamma))*Phi%P(j))&
-                            *((sqrt(gamma/2)*Phi%R(j)-(0,1)*sqrt(1/(2*gamma))*Phi%P(j))*(0,1)sqrt(1/(2*gamma))&
+                            *((sqrt(gamma/2)*Phi%R(j)-(0,1)*sqrt(1/(2*gamma))*Phi%P(j))*(0,1)*sqrt(1/(2*gamma))&
                             -(1/(2*gamma))*Phi%P(l)))
                         elseif (j==l) then
                             if (s/=sprime) then
