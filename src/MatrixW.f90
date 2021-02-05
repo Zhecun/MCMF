@@ -10,6 +10,22 @@ module Wmat
     use Model
     implicit none
     
+    complex(kind=8) :: W0000(4,4)
+    complex(kind=8) :: WR000(4,4)
+    complex(kind=8) :: W00R0(4,4)
+    complex(kind=8) :: W00RR(4,4)
+    complex(kind=8) :: WRR00(4,4)
+    complex(kind=8) :: WR00R(4,4)
+    complex(kind=8) :: W0RR0(4,4)
+    complex(kind=8) :: W0R00(4,4)
+    complex(kind=8) :: W000R(4,4)
+    complex(kind=8) :: WRP00(4,4)
+    complex(kind=8) :: W0PR0(4,4)
+    complex(kind=8) :: W0P00(4,4)
+    complex(kind=8) :: WP000(4,4)
+    complex(kind=8) :: WP00R(4,4)
+    complex(kind=8) :: WPR00(4,4)
+    complex(kind=8) :: WPP00(4,4)
 contains
 
     complex(kind=8) function OverlapNuclear(Rj,Pj,Rl,Pl)
@@ -99,6 +115,31 @@ contains
 
         return
     endfunction
+
+    double precision function OverlapddPhi(Rj,Rl,s,sprime)
+    !-----------------------------------------------------------
+    ! This function calculate 
+    ! < \pdv{\phi_j_s}{R_j} | \pdv{\phi_l_sprime}{R_l} >
+    !-----------------------------------------------------------
+        implicit none
+        
+        integer,         intent(in) :: s,sprime
+        double precision,intent(in) :: Rj,Rl 
+        
+        integer                     :: spp,sppp
+        double precision            :: d_aux(2,2)
+
+        call NAC(d,Rj)
+        call NAC(d_aux,Rl)
+
+        do spp=1,2
+            do sppp=1,2
+                OverlapddPhi=OverlapddPhi-d_aux(s,spp)*OverlapElectronic(Rj,Rl,spp,sppp)*d(sppp,sprime)
+            enddo
+        enddo
+
+        return
+    endfunction
     
     subroutine W_0000(Phi,W0000)
         implicit none
@@ -163,6 +204,29 @@ contains
                     do sprime=1,2
                         W00R0(j+(s-1)*2,l+(sprime-1)*2)=&
                         OverlapNAC_dagger(Phi%R(j),Phi%R(l),s,sprime)*OverlapNuclear(Phi%R(j),Phi%P(j),Phi%R(l),Phi%P(l))
+                    enddo
+                enddo
+            enddo
+        enddo
+
+        return
+    endsubroutine
+
+    subroutine W_00RR(Phi,W00RR)
+        implicit none
+        
+        type(psi),      intent(in)    :: Phi
+        complex(kind=8),intent(inout) :: W00RR(4,4)
+        
+        integer                       :: j,l
+        integer                       :: s,sprime
+
+        do j=1,2
+            do l=1,2
+                do s=1,2
+                    do sprime=1,2
+                        W00RR(j+(s-1)*2,l+(sprime-1)*2)=&
+                        OverlapddPhi(Phi%R(j),Phi%R(l),s,sprime)*OverlapNuclear(Phi%R(j),Phi%P(j),Phi%R(l),Phi%P(l))
                     enddo
                 enddo
             enddo
