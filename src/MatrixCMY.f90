@@ -16,16 +16,21 @@ module MatCMY
 
     complex(kind=8) :: YR(4)
     complex(kind=8) :: YP(4)
-    complex(kind=8) :: CRR(4,4)
-    complex(kind=8) :: CPR(4,4)
-    complex(kind=8) :: MPR(4,4)
-    complex(kind=8) :: MPP(4,4)
+    complex(kind=8) :: CRR(2,2)
+    complex(kind=8) :: CPR(2,2)
+    complex(kind=8) :: MRP(2,2)
+    complex(kind=8) :: MPP(2,2)
+
+    complex(kind=8) :: CM(4,4)
+
 contains
     subroutine Transform(W,W_tensor)
         implicit none
-        integer          :: j,l,s,sprime
-        double precision :: W(4,4)
-        double precision :: W_tensor(2,2,2,2)
+        
+        complex(kind=8),intent(in)    :: W(4,4)
+        complex(kind=8),intent(inout) :: W_tensor(2,2,2,2)
+        
+        integer                       :: j,l,s,sprime
 
         do s=1,2
             do sprime=1,2
@@ -107,7 +112,7 @@ contains
         implicit none
 
         type(psi),      intent(in)    :: Phi
-        complex(kind=8),intent(inout) :: CRR(4,4)
+        complex(kind=8),intent(inout) :: CRR(2,2)
 
         integer                       :: s,sprime,j,l
         complex(kind=8)               :: SS0R00(4,4)
@@ -128,7 +133,7 @@ contains
                     do sprime=1,2
                         CRR(j,l)=CRR(j,l)+Rho(2*(s-1)+j,2*(sprime-1)+l)*(WRR00(2*(s-1)+j,2*(sprime-1)+l)+&
                         WR00R(2*(s-1)+j,2*(sprime-1)+l)+W0RR0(2*(s-1)+j,2*(sprime-1)+l)+&
-                        W00R0(2*(s-1)+j,2*(sprime-1)+l)-SS0R00(2*(s-1)+j,2*(sprime-1)+l)-SS000R(2*(s-1)+j,2*(sprime-1)+l))
+                        W00RR(2*(s-1)+j,2*(sprime-1)+l)-SS0R00(2*(s-1)+j,2*(sprime-1)+l)-SS000R(2*(s-1)+j,2*(sprime-1)+l))
                     enddo
                 enddo
             enddo
@@ -141,7 +146,7 @@ contains
         implicit none
 
         type(psi),      intent(in)    :: Phi
-        complex(kind=8),intent(inout) :: CPR(4,4)
+        complex(kind=8),intent(inout) :: CPR(2,2)
 
         integer                       :: s,sprime,j,l
         complex(kind=8)               :: SS0R00(4,4)
@@ -175,7 +180,7 @@ contains
         implicit none
 
         type(psi),      intent(in)    :: Phi
-        complex(kind=8),intent(inout) :: MRP(4,4)
+        complex(kind=8),intent(inout) :: MRP(2,2)
 
         integer                       :: s,sprime,j,l
         complex(kind=8)               :: SS(4,4)
@@ -206,7 +211,7 @@ contains
         implicit none
 
         type(psi),      intent(in)    :: Phi
-        complex(kind=8),intent(inout) :: MPP(4,4)
+        complex(kind=8),intent(inout) :: MPP(2,2)
 
         integer                       :: s,sprime,j,l
         complex(kind=8)               :: SS(4,4)
@@ -231,7 +236,41 @@ contains
         enddo
 
         return
-
     endsubroutine
+
+    subroutine C_M(CM)
+        implicit none
+
+        complex(kind=8),intent(inout) :: CM(4,4)
+
+        integer                       :: j,l
+
+        do j=1,2
+            do l=1,2
+                CM(j,l)=CRR(j,l)
+            enddo
+        enddo
+
+        do j=3,4
+            do l=1,2
+                CM(j,l)=CPR(j-2,l)
+            enddo
+        enddo
+
+        do j=1,2
+            do l=3,4
+                CM(j,l)=MRP(j,l-2)
+            enddo
+        enddo
+
+        do j=3,4
+            do l=3,4
+                CM(j,l)=MPP(j-2,l-2)
+            enddo
+        enddo
+
+        return
+    endsubroutine
+
 
 end module MatCMY
